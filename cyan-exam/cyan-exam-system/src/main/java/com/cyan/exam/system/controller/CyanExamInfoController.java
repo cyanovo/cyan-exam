@@ -64,4 +64,40 @@ public class CyanExamInfoController extends BaseController {
     public AjaxResult remove(@PathVariable Long[] examIds) {
         return toAjax(cyanExamInfoService.deleteCyanExamInfoByExamIds(examIds));
     }
+
+    // 获取考试已分配的学生ID列表
+    @PreAuthorize("@ss.hasPermi('exam:exam:query')")
+    @GetMapping("/{examId}/studentIds")
+    public AjaxResult getStudentIds(@PathVariable Long examId) {
+        List<Long> ids = cyanExamInfoService.selectStudentIdsByExamId(examId);
+        return success(ids);
+    }
+
+    // 保存考试的学生分配
+    @PreAuthorize("@ss.hasPermi('exam:exam:edit')")
+    @Log(title = "考试学生分配", businessType = BusinessType.UPDATE)
+    @PutMapping("/{examId}/students")
+    public AjaxResult saveStudents(@PathVariable Long examId, @RequestBody Long[] studentIds) {
+        cyanExamInfoService.saveExamStudents(examId,
+                studentIds != null ? java.util.Arrays.asList(studentIds) : new java.util.ArrayList<>());
+        return success();
+    }
+
+    // 获取考试已选择的试题ID列表
+    @PreAuthorize("@ss.hasPermi('exam:exam:query')")
+    @GetMapping("/{examId}/questionIds")
+    public AjaxResult getQuestionIds(@PathVariable Long examId) {
+        List<Long> ids = cyanExamInfoService.selectQuestionIdsByExamId(examId);
+        return success(ids);
+    }
+
+    // 保存考试的试题选择
+    @PreAuthorize("@ss.hasPermi('exam:exam:edit')")
+    @Log(title = "考试试题选择", businessType = BusinessType.UPDATE)
+    @PutMapping("/{examId}/questions")
+    public AjaxResult saveQuestions(@PathVariable Long examId, @RequestBody Long[] questionIds) {
+        cyanExamInfoService.saveExamQuestions(examId,
+                questionIds != null ? java.util.Arrays.asList(questionIds) : new java.util.ArrayList<>());
+        return success();
+    }
 }

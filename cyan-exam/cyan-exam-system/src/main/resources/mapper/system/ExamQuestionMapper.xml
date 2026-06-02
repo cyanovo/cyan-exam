@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.cyan.exam.system.mapper.ExamQuestionMapper">
+
+    <insert id="batchInsertExamQuestion">
+        INSERT INTO exam_question (exam_id, question_id, sort) VALUES
+        <foreach collection="questionIds" item="questionId" separator=",">
+            (#{examId}, #{questionId}, 0)
+        </foreach>
+    </insert>
+
+    <delete id="deleteExamQuestionByExamId" parameterType="Long">
+        DELETE FROM exam_question WHERE exam_id = #{examId}
+    </delete>
+
+    <select id="selectQuestionIdsByExamId" parameterType="Long" resultType="Long">
+        SELECT question_id FROM exam_question WHERE exam_id = #{examId}
+    </select>
+
+</mapper>

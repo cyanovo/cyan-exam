@@ -9,4 +9,12 @@ public interface ICyanExamInfoService {
     int insertCyanExamInfo(CyanExamInfo examInfo);
     int updateCyanExamInfo(CyanExamInfo examInfo);
     int deleteCyanExamInfoByExamIds(Long[] examIds);
+    // 查询已分配学生ID
+    List<Long> selectStudentIdsByExamId(Long examId);
+    // 保存学生分配
+    void saveExamStudents(Long examId, List<Long> userIds);
+    // 查询已分配试题ID
+    List<Long> selectQuestionIdsByExamId(Long examId);
+    // 保存试题选择
+    void saveExamQuestions(Long examId, List<Long> questionIds);
 }

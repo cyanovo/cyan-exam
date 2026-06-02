@@ -1,5 +1,6 @@
 <template>
   <div class="app-container">
+    <!-- 搜索区域 -->
     <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="68px">
       <el-form-item label="考试名称" prop="examName">
         <el-input v-model="queryParams.examName" placeholder="请输入考试名称" clearable @keyup.enter="handleQuery" />
@@ -35,6 +36,7 @@
       </el-form-item>
     </el-form>
 
+    <!-- 工具栏 -->
     <el-row :gutter="10" class="mb8">
       <el-col :span="1.5">
         <el-button type="primary" plain icon="Plus" @click="handleAdd" v-hasPermi="['exam:exam:add']">新增</el-button>
@@ -48,9 +50,18 @@
       <el-col :span="1.5">
         <el-button type="warning" plain icon="Download" @click="handleExport" v-hasPermi="['exam:exam:export']">导出</el-button>
       </el-col>
+      <el-col :span="1.5">
+        <el-button type="primary" plain icon="User" @click="handleAssignStudent" :disabled="single"
+          v-hasPermi="['exam:exam:edit']">分配学生</el-button>
+      </el-col>
+      <el-col :span="1.5">
+        <el-button type="success" plain icon="List" @click="handleSelectQuestion" :disabled="single"
+          v-hasPermi="['exam:exam:edit']">选择题目</el-button>
+      </el-col>
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList" />
     </el-row>
 
+    <!-- 表格 -->
     <el-table v-loading="loading" :data="examList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="考试名称" align="center" prop="examName" show-overflow-tooltip />
@@ -80,6 +91,7 @@
 
     <pagination v-show="total>0" :total="total" v-model:page="queryParams.pageNum" v-model:limit="queryParams.pageSize" @pagination="getList" />
 
+    <!-- 新增/修改对话框 -->
     <el-dialog :title="title" v-model="open" width="600px" append-to-body>
       <el-form ref="examRef" :model="form" :rules="rules" label-width="80px">
         <el-form-item label="考试名称" prop="examName">
@@ -121,11 +133,71 @@
         </span>
       </template>
     </el-dialog>
+
+    <!-- 分配学生对话框 -->
+    <el-dialog title="分配学生" v-model="studentOpen" width="700px" append-to-body>
+      <el-transfer
+        v-model="selectedStudentIds"
+        :data="allStudentList"
+        :titles="['未选学生', '已选学生']"
+        filterable
+        filter-placeholder="请输入学生姓名/学号"
+        :props="{ key: 'userId', label: 'displayName' }"
+      />
+      <template #footer>
+        <el-button @click="studentOpen = false">取 消</el-button>
+        <el-button type="primary" @click="submitStudentAssign">确 定</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 选择题目对话框（带筛选） -->
+    <el-dialog title="选择题目" v-model="questionOpen" width="900px" append-to-body>
+      <!-- 题目筛选区域 -->
+      <el-form :model="questionQuery" :inline="true" label-width="68px" @submit.prevent>
+        <el-form-item label="题目分类">
+          <el-select v-model="questionQuery.category" placeholder="请选择" clearable>
+            <el-option v-for="item in categoryOptions" :key="item.value" :label="item.label" :value="item.value" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="难易程度">
+          <el-select v-model="questionQuery.difficulty" placeholder="请选择" clearable>
+            <el-option v-for="i in 5" :key="i" :label="i + '星'" :value="i" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="题目类型">
+          <el-select v-model="questionQuery.questionType" placeholder="请选择" clearable>
+            <el-option v-for="item in typeOptions" :key="item.value" :label="item.label" :value="item.value" />
+          </el-select>
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" icon="Search" @click="loadQuestionList">搜索</el-button>
+        </el-form-item>
+      </el-form>
+
+      <el-transfer
+        v-model="selectedQuestionIds"
+        :data="allQuestionList"
+        :titles="['未选题目', '已选题目']"
+        filterable
+        filter-placeholder="请输入题干关键词"
+        :props="{ key: 'questionId', label: 'title' }"
+        style="margin-top: 10px"
+      />
+      <template #footer>
+        <el-button @click="questionOpen = false">取 消</el-button>
+        <el-button type="primary" @click="submitQuestionAssign">确 定</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup name="CyanExam">
-import { listCyanExam, getCyanExam, addCyanExam, updateCyanExam, delCyanExam } from "@/api/system/info"
+import {
+  listCyanExam, getCyanExam, addCyanExam, updateCyanExam, delCyanExam,
+  getStudentIds, saveStudents, getQuestionIds, saveQuestions
+} from "@/api/system/info"
+import { listStudent } from "@/api/system/student"       // 学生列表接口（按实际路径调整）
+import { listQuestion } from "@/api/question/question"    // 题库列表接口（按实际路径调整）
 import { getCurrentInstance, reactive, ref, toRefs } from "vue"
 
 const { proxy } = getCurrentInstance()
@@ -140,6 +212,39 @@ const single = ref(true)
 const multiple = ref(true)
 const total = ref(0)
 const title = ref("")
+
+// 学生分配相关
+const studentOpen = ref(false)
+const allStudentList = ref([])
+const selectedStudentIds = ref([])
+
+// 题目选择相关
+const questionOpen = ref(false)
+const allQuestionList = ref([])
+const selectedQuestionIds = ref([])
+
+// 题目筛选条件
+const questionQuery = reactive({
+  category: undefined,
+  difficulty: undefined,
+  questionType: undefined
+})
+
+// 题库分类、题型常量（与题库管理页面一致）
+const categoryOptions = [
+  { label: "Java", value: "JAVA" },
+  { label: "Python", value: "PYTHON" },
+  { label: "C语言", value: "C" },
+  { label: "HTML", value: "HTML" }
+]
+
+const typeOptions = [
+  { label: "单选题", value: "SINGLE_CHOICE" },
+  { label: "多选题", value: "MULTI_CHOICE" },
+  { label: "判断题", value: "JUDGE" },
+  { label: "填空题", value: "FILL_BLANK" },
+  { label: "简答题", value: "SHORT_ANSWER" }
+]
 
 const data = reactive({
   form: {},
@@ -160,6 +265,23 @@ const data = reactive({
 
 const { queryParams, form, rules } = toRefs(data)
 
+// 加载题目列表（根据筛选条件）
+function loadQuestionList() {
+  listQuestion({
+    pageNum: 1,
+    pageSize: 9999,            // 一次性拉取全部，实际可根据题目数量调整
+    category: questionQuery.category,
+    difficulty: questionQuery.difficulty,
+    questionType: questionQuery.questionType
+  }).then(res => {
+    allQuestionList.value = res.rows.map(q => ({
+      questionId: q.questionId,
+      title: `${q.title} (${q.category} | ${['','一星','二星','三星','四星','五星'][q.difficulty]} | ${q.questionType})`
+    }))
+  })
+}
+
+// 查询考试列表
 function getList() {
   loading.value = true
   listCyanExam(queryParams.value).then(response => {
@@ -252,6 +374,53 @@ function handleExport() {
   proxy.download('exam/exam/export', {
     ...queryParams.value
   }, `exam_${new Date().getTime()}.xlsx`)
+}
+
+// 学生分配
+function handleAssignStudent() {
+  if (ids.value.length !== 1) return
+  listStudent({ status: '0' }).then(res => {
+    allStudentList.value = res.rows.map(s => ({
+      userId: s.userId,
+      displayName: s.studentNo + ' - ' + (s.nickName || s.studentNo)
+    }))
+  })
+  getStudentIds(ids.value[0]).then(res => {
+    selectedStudentIds.value = res.data || []
+  })
+  studentOpen.value = true
+}
+
+function submitStudentAssign() {
+  saveStudents(ids.value[0], selectedStudentIds.value).then(() => {
+    proxy.$modal.msgSuccess('学生分配成功')
+    studentOpen.value = false
+  })
+}
+
+// 试题选择
+function handleSelectQuestion() {
+  if (ids.value.length !== 1) return
+  // 重置筛选条件
+  Object.assign(questionQuery, {
+    category: undefined,
+    difficulty: undefined,
+    questionType: undefined
+  })
+  // 加载全部题目（根据筛选条件）
+  loadQuestionList()
+  // 获取当前考试已选择的题目ID
+  getQuestionIds(ids.value[0]).then(res => {
+    selectedQuestionIds.value = res.data || []
+  })
+  questionOpen.value = true
+}
+
+function submitQuestionAssign() {
+  saveQuestions(ids.value[0], selectedQuestionIds.value).then(() => {
+    proxy.$modal.msgSuccess('试题选择成功')
+    questionOpen.value = false
+  })
 }
 
 getList()

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.cyan.exam.system.mapper.ExamStudentMapper">
+
+    <insert id="batchInsertExamStudent">
+        INSERT INTO exam_student (exam_id, user_id) VALUES
+        <foreach collection="userIds" item="userId" separator=",">
+            (#{examId}, #{userId})
+        </foreach>
+    </insert>
+
+    <delete id="deleteExamStudentByExamId" parameterType="Long">
+        DELETE FROM exam_student WHERE exam_id = #{examId}
+    </delete>
+
+    <select id="selectUserIdsByExamId" parameterType="Long" resultType="Long">
+        SELECT user_id FROM exam_student WHERE exam_id = #{examId}
+    </select>
+
+</mapper>
