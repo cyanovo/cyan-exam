@@ -145,53 +145,84 @@
       </template>
     </el-dialog>
 
-    <!-- 导入对话框 -->
-    <el-dialog title="题库导入" v-model="importOpen" width="400px" append-to-body class="modern-dialog">
-      <el-upload ref="uploadRef" :action="uploadUrl" :headers="uploadHeaders" :before-upload="beforeUpload" :on-success="handleImportSuccess" :auto-upload="false" :limit="1" accept=".xlsx, .xls" drag>
-        <el-icon><Upload /></el-icon>
-        <div class="el-upload__text">将Excel文件拖到此处，或 <em>点击上传</em></div>
-        <template #tip>
-          <div class="el-upload__tip">
-            仅允许 .xlsx / .xls 文件，请先
-            <el-button type="text" @click="downloadTemplate">下载模板</el-button>
-          </div>
-        </template>
-      </el-upload>
-      <template #footer>
-        <el-button @click="importOpen = false">取 消</el-button>
-        <el-button type="primary" @click="submitUpload">开始上传</el-button>
-      </template>
-    </el-dialog>
-
-    <!-- AI粘贴导入对话框 -->
-    <el-dialog title="AI 智能导入" v-model="pasteOpen" width="700px" append-to-body class="modern-dialog">
+    <!-- AI 智能导入对话框 -->
+    <el-dialog title="AI 智能导入" v-model="pasteOpen" width="800px" append-to-body class="modern-dialog">
       <el-alert title="操作指南" type="info" :closable="false" show-icon class="step-alert">
         <template #default>
           <div class="steps">
-            <p>① 点击“复制提示词”，将提示词与您的试题一起发送给 AI</p>
-            <p>② 将 AI 生成的 JSON 数组粘贴到下方文本框</p>
-            <p>③ 点击“导入”完成批量录入</p>
-            <p class="ai-link">推荐使用 <a href="https://chat.deepseek.com/" target="_blank">DeepSeek Chat</a></p>
+            <p>① 在下文粘贴您的试题文本（支持自然语言、Word 复制内容等）</p>
+            <p>② 填写您的 DeepSeek API Key（<a href="https://platform.deepseek.com/api_keys" target="_blank">获取地址</a>）</p>
+            <p>③ 点击“生成试题”，AI 自动转换为标准 JSON</p>
+            <p>④ 预览并编辑 JSON，确认后点击“导入”批量入库</p>
           </div>
         </template>
       </el-alert>
-      <div class="prompt-actions">
-        <el-button type="primary" @click="copyPrompt">复制提示词</el-button>
-        <el-popover placement="bottom" :width="500" trigger="click">
-          <template #reference>
-            <el-button link type="primary">查看提示词</el-button>
-          </template>
-          <div class="prompt-content">{{ promptTemplate }}</div>
-        </el-popover>
+
+      <div style="margin-top: 20px;">
+        <el-form>
+          <el-form-item label="试题内容">
+            <el-input 
+              v-model="rawExamText" 
+              type="textarea" 
+              :rows="8" 
+              placeholder="请将您的试题粘贴到这里，例如：
+    1. Java 语言的特点有哪些？（单选题）
+    A. 面向对象  B. 跨平台  C. 编译型  D. 以上都对
+    答案：D
+
+    2. Python 中用于定义函数的关键字是？（填空题）
+    答案：def"
+              class="limited-textarea"
+            />
+          </el-form-item>
+
+          <el-form-item label="API Key">
+            <el-input 
+              v-model="apiKey" 
+              show-password 
+              placeholder="sk-xxxxxxxxxxxxxxxxxxxxxxxx"
+            >
+              <template #append>
+                <el-button @click="saveApiKey">保存</el-button>
+              </template>
+            </el-input>
+            <div style="font-size: 12px; color: #999; margin-top: 4px;">
+              密钥仅保存在当前浏览器，不会上传至服务器。
+            </div>
+          </el-form-item>
+
+          <el-form-item>
+            <el-button type="primary" :loading="generating" @click="generateQuestionsByAI">
+              <el-icon v-if="!generating"><MagicStick /></el-icon>
+              {{ generating ? '正在调用 AI...' : '生成试题' }}
+            </el-button>
+            <el-button @click="clearAIForm">清空</el-button>
+          </el-form-item>
+        </el-form>
+
+        <!-- 生成结果预览 -->
+        <div v-if="generatedJson" class="ai-preview">
+          <el-divider content-position="left">
+            <span style="font-weight: 600; color: #303133;">AI 生成结果预览</span>
+          </el-divider>
+          <el-input
+            v-model="jsonText"
+            type="textarea"
+            :rows="15"
+            placeholder="JSON 数据"
+            class="limited-textarea"
+          />
+          <div class="preview-actions">
+            <el-button type="primary" @click="submitJsonImport" :disabled="!jsonText">
+              导入预览数据
+            </el-button>
+            <el-button @click="copyGeneratedJson">复制 JSON</el-button>
+          </div>
+        </div>
       </div>
-      <el-form>
-        <el-form-item label="JSON 数据">
-          <el-input v-model="jsonText" type="textarea" :rows="12" placeholder="请将AI生成的JSON数组粘贴到这里" class="limited-textarea" />
-        </el-form-item>
-      </el-form>
+
       <template #footer>
-        <el-button @click="pasteOpen = false">取 消</el-button>
-        <el-button type="primary" @click="submitJsonImport">导 入</el-button>
+        <el-button @click="pasteOpen = false">关 闭</el-button>
       </template>
     </el-dialog>
   </div>
@@ -202,7 +233,7 @@ import { listQuestion, getQuestion, delQuestion, addQuestion, updateQuestion, im
 import { getCurrentInstance, reactive, ref, toRefs, computed, nextTick } from "vue"
 import { getToken } from "@/utils/auth"
 import request from '@/utils/request'
-import { Upload } from '@element-plus/icons-vue'
+import { Upload, MagicStick } from '@element-plus/icons-vue'
 
 const { proxy } = getCurrentInstance()
 
@@ -217,6 +248,14 @@ const single = ref(true)
 const multiple = ref(true)
 const total = ref(0)
 const title = ref("")
+
+// AI 导入相关变量
+const pasteOpen = ref(false)
+const jsonText = ref('')
+const rawExamText = ref('')
+const apiKey = ref(localStorage.getItem('deepseek_api_key') || '')
+const generating = ref(false)
+const generatedJson = ref('')
 
 const data = reactive({
   form: {
@@ -252,31 +291,6 @@ const data = reactive({
     }]
   }
 })
-
-const pasteOpen = ref(false)
-const jsonText = ref('')
-
-const promptTemplate = `请将以下试题内容转换为 JSON 数组格式（严格使用下方字段名和格式），每个题目一个对象：
-{
-  "category": "题目分类 (JAVA/PYTHON/C/HTML)",
-  "difficulty": 难易程度 (1-5整数),
-  "questionType": "题目类型 (SINGLE_CHOICE/MULTI_CHOICE/JUDGE/FILL_BLANK/SHORT_ANSWER)",
-  "title": "题干内容",
-  "subTitle": "选择题/判断题：选项格式为 'A: 内容; B: 内容 | 正确答案标签(多选用逗号分隔)'，如 'A: 编译型语言; B: 解释型语言; C: 编译与解释结合; D: 以上都对 | C'。填空题和简答题留空。",
-  "answer": "选择题：选项标签；多选题：标签用逗号连接；判断题：'对'或'错'；填空题：答案用英文分号分隔；简答题：参考答案文本"
-}
-请直接输出 JSON 数组，不要包含 markdown 标记或任何说明文字。示例：
-[
-  {
-    "category": "JAVA",
-    "difficulty": 3,
-    "questionType": "SINGLE_CHOICE",
-    "title": "Java 属于什么类型的语言？",
-    "subTitle": "A: 编译型语言; B: 解释型语言; C: 编译与解释结合; D: 以上都对 | C",
-    "answer": "C"
-  }
-]
-试题内容如下：`
 
 const { queryParams, form, rules } = toRefs(data)
 
@@ -549,13 +563,101 @@ function downloadTemplate() {
 function handlePasteImport() {
   pasteOpen.value = true
   jsonText.value = ''
+  rawExamText.value = ''
+  generatedJson.value = ''
 }
 
-function copyPrompt() {
-  navigator.clipboard.writeText(promptTemplate).then(() => {
-    proxy.$modal.msgSuccess("提示词已复制到剪贴板")
+function saveApiKey() {
+  localStorage.setItem('deepseek_api_key', apiKey.value)
+  proxy.$modal.msgSuccess('API Key 已保存')
+}
+
+function clearAIForm() {
+  rawExamText.value = ''
+  jsonText.value = ''
+  generatedJson.value = ''
+}
+
+async function generateQuestionsByAI() {
+  if (!rawExamText.value.trim()) {
+    proxy.$modal.msgWarning('请粘贴试题内容')
+    return
+  }
+  if (!apiKey.value.trim()) {
+    proxy.$modal.msgWarning('请填写 DeepSeek API Key')
+    return
+  }
+
+  generating.value = true
+  try {
+    const systemPrompt = `你是一个专业的题库转换助手。请将用户提供的试题内容转换为 JSON 数组格式。
+要求：
+1. 每个题目一个对象，包含字段：
+   - category: 题目分类，根据内容推测（JAVA/PYTHON/C/HTML）
+   - difficulty: 难易程度 (1-5整数，默认3)
+   - questionType: 题目类型 (SINGLE_CHOICE/MULTI_CHOICE/JUDGE/FILL_BLANK/SHORT_ANSWER)
+   - title: 题干内容
+   - subTitle: 选择题/判断题：选项文本格式为 'A: 内容; B: 内容 | 正确答案标签'，如 'A: 面向对象; B: 跨平台; C: 编译型; D: 以上都对 | D'。多选题答案用逗号分隔。填空题和简答题此字段为空。
+   - answer: 选择题选项标签；多选题标签逗号连接；判断题“对”或“错”；填空题多个答案用英文分号分隔；简答题参考答案。
+2. 直接输出 JSON 数组，不要包含 markdown 标记或任何说明文字示例：
+[
+  {
+    "category": "JAVA",
+    "difficulty": 3,
+    "questionType": "SINGLE_CHOICE",
+    "title": "Java 属于什么类型的语言？",
+    "subTitle": "A: 编译型语言; B: 解释型语言; C: 编译与解释结合; D: 以上都对 | C",
+    "answer": "C"
+  }
+]。
+3. 如果用户没有指定题目分类，智能推测。
+4. 尽量保持选项顺序与原文一致。
+5. json数组中每一个字段都要有值。
+6. 选择题和判断题的选项是写在副题干的，这个一定要有`
+
+    const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey.value}`
+      },
+      body: JSON.stringify({
+        model: 'deepseek-chat',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: rawExamText.value }
+        ],
+        temperature: 0.2
+      })
+    })
+
+    const data = await response.json()
+    if (!response.ok) {
+      throw new Error(data.error?.message || '调用失败')
+    }
+
+    const content = data.choices?.[0]?.message?.content || ''
+    const jsonMatch = content.match(/\[[\s\S]*\]/)
+    if (!jsonMatch) {
+      throw new Error('AI 返回内容未包含有效 JSON 数组')
+    }
+    generatedJson.value = jsonMatch[0]
+    jsonText.value = generatedJson.value
+    proxy.$modal.msgSuccess('试题生成成功，请预览确认')
+  } catch (error) {
+    console.error(error)
+    proxy.$modal.msgError('生成失败：' + error.message)
+  } finally {
+    generating.value = false
+  }
+}
+
+function copyGeneratedJson() {
+  if (!jsonText.value) return
+  navigator.clipboard.writeText(jsonText.value).then(() => {
+    proxy.$modal.msgSuccess('已复制到剪贴板')
   }).catch(() => {
-    proxy.$modal.msgError("复制失败，请手动复制")
+    proxy.$modal.msgError('复制失败，请手动选择')
   })
 }
 
@@ -618,15 +720,26 @@ getList()
   background: #fafbfd;
 }
 
-/* 统一文本框限高 */
-:deep(.el-textarea__inner) {
-  max-height: 150px !important;
-  overflow-y: auto !important;
-  resize: vertical;
+/* 表格行高统一紧凑 */
+:deep(.el-table__body td) {
+  padding: 10px 0;
 }
 
-.limited-textarea {
-  width: 100%;
+/* 强制表格内文本单行省略（题干、答案等） */
+:deep(.el-table .cell) {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-height: 40px;
+  line-height: 1.5;
+}
+
+/* 操作列按钮保持水平排列 */
+:deep(.el-table td:last-child .cell) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
 }
 
 /* 选项列表 */
@@ -690,6 +803,21 @@ getList()
   display: flex;
   gap: 10px;
   align-items: center;
+}
+
+.ai-preview {
+  margin-top: 20px;
+}
+
+.preview-actions {
+  margin-top: 12px;
+  display: flex;
+  gap: 10px;
+}
+
+.steps a {
+  color: #409EFF;
+  text-decoration: none;
 }
 
 .prompt-content {
