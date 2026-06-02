@@ -1,4 +1,5 @@
 import { createApp } from 'vue'
+import '@/assets/styles/cyan.scss'
 
 import Cookies from 'js-cookie'
 
