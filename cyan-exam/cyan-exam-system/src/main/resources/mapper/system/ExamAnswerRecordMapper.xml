@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.cyan.exam.system.mapper.ExamAnswerRecordMapper">
+
+    <resultMap type="ExamAnswerRecord" id="ExamAnswerRecordResult">
+        <result property="recordId"    column="record_id"    />
+        <result property="examId"      column="exam_id"      />
+        <result property="userId"      column="user_id"      />
+        <result property="questionId"  column="question_id"  />
+        <result property="answer"      column="answer"       />
+        <result property="score"       column="score"        />
+        <result property="createTime"  column="create_time"  />
+        <result property="updateTime"  column="update_time"  />
+    </resultMap>
+
+    <sql id="selectExamAnswerRecordVo">
+        select record_id, exam_id, user_id, question_id, answer, score, create_time, update_time
+        from exam_answer_record
+    </sql>
+
+    <select id="selectExamAnswerRecordList" parameterType="ExamAnswerRecord" resultMap="ExamAnswerRecordResult">
+        <include refid="selectExamAnswerRecordVo"/>
+        <where>
+            <if test="examId != null "> and exam_id = #{examId}</if>
+            <if test="userId != null "> and user_id = #{userId}</if>
+            <if test="questionId != null "> and question_id = #{questionId}</if>
+        </where>
+    </select>
+
+    <select id="selectByExamUserQuestion" parameterType="ExamAnswerRecord" resultMap="ExamAnswerRecordResult">
+        <include refid="selectExamAnswerRecordVo"/>
+        where exam_id = #{examId} and user_id = #{userId} and question_id = #{questionId}
+    </select>
+
+    <select id="selectByExamAndUser" resultMap="ExamAnswerRecordResult">
+        <include refid="selectExamAnswerRecordVo"/>
+        where exam_id = #{examId} and user_id = #{userId}
+    </select>
+
+    <insert id="insertOrUpdate" parameterType="ExamAnswerRecord">
+        INSERT INTO exam_answer_record (exam_id, user_id, question_id, answer, create_time, update_time)
+        VALUES (#{examId}, #{userId}, #{questionId}, #{answer}, now(), now())
+            ON DUPLICATE KEY UPDATE answer = VALUES(answer), update_time = now()
+    </insert>
+
+    <update id="updateExamAnswerRecord" parameterType="ExamAnswerRecord">
+        update exam_answer_record
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="answer != null">answer = #{answer},</if>
+            <if test="score != null">score = #{score},</if>
+            update_time = now(),
+        </trim>
+        where record_id = #{recordId}
+    </update>
+
+    <delete id="deleteExamAnswerRecordByRecordId" parameterType="Long">
+        delete from exam_answer_record where record_id = #{recordId}
+    </delete>
+
+    <delete id="deleteExamAnswerRecordByRecordIds" parameterType="String">
+        delete from exam_answer_record where record_id in
+        <foreach item="recordId" collection="array" open="(" separator="," close=")">
+            #{recordId}
+        </foreach>
+    </delete>
+
+    <delete id="deleteByExamAndUser">
+        delete from exam_answer_record where exam_id = #{examId} and user_id = #{userId}
+    </delete>
+</mapper>
