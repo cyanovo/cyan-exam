@@ -332,3 +332,32 @@ function handleResetPwd(row) {
 
 getList()
 </script>
+
+<style scoped>
+.app-container {
+  padding: 20px;
+}
+
+:deep(.el-table) {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+:deep(.el-table th.el-table__cell) {
+  background-color: #e0f2f1 !important;
+  color: #00695c !important;
+  font-weight: 600;
+}
+
+:deep(.el-button--primary) {
+  border-radius: 10px;
+}
+
+:deep(.el-button) {
+  border-radius: 10px;
+}
+
+:deep(.el-dialog) {
+  border-radius: 20px;
+}
+</style>

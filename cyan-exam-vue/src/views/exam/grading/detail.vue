@@ -90,8 +90,78 @@ onMounted(() => fetchDetail())
 </script>
 
 <style scoped>
-.grading-detail { padding: 20px; }
-.question-block { border: 1px solid #ddd; padding: 15px; margin-bottom: 15px; border-radius: 5px; }
-.score-input { margin-top: 10px; }
-.score-panel { background: #f5f7fa; padding: 20px; border-radius: 5px; position: sticky; top: 20px; }
+.grading-detail {
+  padding: 24px;
+  max-width: 1200px;
+}
+
+.grading-detail h3 {
+  font-size: 20px;
+  font-weight: 700;
+  color: #00695c;
+  margin: 0 0 24px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid rgba(0, 137, 123, 0.12);
+}
+
+.question-block {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(0, 137, 123, 0.1);
+  border-radius: 16px;
+  padding: 20px 24px;
+  margin-bottom: 16px;
+  transition: box-shadow 0.2s;
+}
+.question-block:hover {
+  box-shadow: 0 4px 16px rgba(0, 137, 123, 0.08);
+}
+
+.question-block p {
+  margin: 0 0 8px;
+  color: #334155;
+  line-height: 1.6;
+}
+
+.score-input {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(0, 137, 123, 0.08);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+  color: #00695c;
+}
+
+.score-panel {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  border: 1px solid rgba(0, 137, 123, 0.12);
+  border-radius: 20px;
+  padding: 24px;
+  position: sticky;
+  top: 20px;
+  text-align: center;
+}
+.score-panel p {
+  font-size: 20px;
+  font-weight: 700;
+  color: #00695c;
+  margin: 0;
+}
+
+:deep(.el-button--primary) {
+  border-radius: 12px;
+  padding: 12px 28px;
+  font-size: 15px;
+  font-weight: 600;
+  margin-top: 8px;
+}
+
+:deep(.el-input-number .el-input__inner) {
+  border-radius: 10px;
+}
 </style>

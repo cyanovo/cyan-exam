@@ -28,12 +28,7 @@
 }
 
 // ======== 全局装饰性元素应用毛玻璃和浅青背景 ========
-// 侧边栏
-.sidebar-container {
-  background: rgba(224, 242, 241, 0.8) !important; // 浅青半透明
-  backdrop-filter: blur(25px);
-  -webkit-backdrop-filter: blur(25px);
-}
+// 侧边栏样式由 sidebar.scss 统一管理，此处不再重复声明
 
 // 卡片
 .el-card {

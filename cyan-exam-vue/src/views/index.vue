@@ -78,6 +78,60 @@ onUnmounted(() => clearInterval(timer))
 </script>
 
 <style scoped>
-.wait-container { text-align: center; padding-top: 100px; }
-.countdown { font-size: 48px; margin: 20px 0; }
+.wait-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 60vh;
+  padding: 40px 20px;
+}
+
+.empty, .ongoing, .upcoming {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 24px;
+  padding: 48px 40px;
+  box-shadow: 0 8px 32px rgba(0, 137, 123, 0.08);
+  border: 1px solid rgba(0, 137, 123, 0.1);
+  max-width: 480px;
+  width: 100%;
+  text-align: center;
+}
+
+.ongoing h2, .upcoming h2 {
+  font-size: 22px;
+  font-weight: 700;
+  color: #00695c;
+  margin: 0 0 12px;
+}
+
+.ongoing p, .upcoming p {
+  font-size: 15px;
+  color: #64748b;
+  margin: 0 0 24px;
+}
+
+.countdown {
+  font-size: 56px;
+  font-weight: 700;
+  color: #00897b;
+  margin: 20px 0;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 2px;
+}
+
+:deep(.el-button--primary) {
+  border-radius: 14px;
+  padding: 12px 32px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+:deep(.el-button--success) {
+  border-radius: 14px;
+  padding: 12px 32px;
+  font-size: 15px;
+  font-weight: 600;
+}
 </style>

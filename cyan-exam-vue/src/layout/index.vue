@@ -66,6 +66,10 @@ function setLayout() {
 @use "@/assets/styles/mixin.scss" as mix;
 @use "@/assets/styles/variables.module.scss" as vars;
 
+// 侧边栏宽度（必须与 sidebar.scss 保持一致）
+$sidebar-width: vars.$base-sidebar-width;            // 200px
+$sidebar-collapsed-width: 64px;                       // Element Plus el-menu 折叠宽度
+
 .app-wrapper {
   @include mix.clearfix;
   position: relative;
@@ -78,9 +82,31 @@ function setLayout() {
   }
 }
 
-.main-container:has(.fixed-header) {
-  height: 100vh;
-  overflow: hidden;
+// ==================== 主内容区偏移（防止侧边栏遮挡） ====================
+.main-container {
+  margin-left: $sidebar-width;
+  transition: margin-left 0.28s;
+
+  // 固定头部模式下撑满视口
+  &:has(.fixed-header) {
+    height: 100vh;
+    overflow: hidden;
+  }
+}
+
+// 侧边栏折叠时（hideSidebar）
+.hideSidebar .main-container {
+  margin-left: $sidebar-collapsed-width;
+}
+
+// 侧边栏完全隐藏时
+.sidebarHide .main-container {
+  margin-left: 0;
+}
+
+// 移动端
+.mobile .main-container {
+  margin-left: 0;
 }
 
 .drawer-bg {
@@ -93,17 +119,18 @@ function setLayout() {
   z-index: 999;
 }
 
+// ==================== 固定头部（navbar + tagsView） ====================
 .fixed-header {
   position: fixed;
   top: 0;
   right: 0;
   z-index: 9;
-  width: calc(100% - #{vars.$base-sidebar-width});
+  width: calc(100% - #{$sidebar-width});
   transition: width 0.28s;
 }
 
 .hideSidebar .fixed-header {
-  width: calc(100% - 54px);
+  width: calc(100% - #{$sidebar-collapsed-width});
 }
 
 .sidebarHide .fixed-header {

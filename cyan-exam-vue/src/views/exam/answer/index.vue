@@ -271,7 +271,6 @@ onUnmounted(() => clearInterval(timer))
 .exam-answer {
   display: flex;
   height: 100vh; /* 改为 100vh，通过 padding 防止被顶部导航遮挡，实际会被框架的导航栏覆盖？ */
-  /* 若依框架顶部导航高度约84px，内容区会自行 padding-top，这里不用减，父级可能已处理。 */
   background: linear-gradient(135deg, #f0f4f8 0%, #e2e8f0 100%);
   padding: 20px;
   gap: 20px;

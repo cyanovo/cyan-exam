@@ -690,11 +690,14 @@ getList()
 .search-bar,
 .toolbar,
 .table-wrap {
-  background: #fff;
-  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  border-radius: 16px;
   padding: 16px;
   margin-bottom: 16px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 2px 16px rgba(0, 137, 123, 0.06);
+  border: 1px solid rgba(0, 137, 123, 0.06);
 }
 
 .table-wrap {
@@ -702,18 +705,18 @@ getList()
 }
 
 :deep(.table-header) {
-  background-color: #f8f9fc;
+  background-color: #e0f2f1;
   font-weight: 600;
-  color: #303133;
+  color: #00695c;
 }
 
 :deep(.el-table) {
-  border-radius: 8px;
+  border-radius: 12px;
   overflow: hidden;
 }
 
 :deep(.el-table th) {
-  background-color: #f8f9fc;
+  background-color: #e0f2f1;
 }
 
 :deep(.el-table--striped .el-table__body tr.el-table__row--striped td) {
@@ -760,7 +763,7 @@ getList()
 }
 
 :deep(.modern-dialog .el-dialog__header) {
-  background-color: #f5f7fb;
+  background-color: #e0f2f1;
   padding: 20px 24px 0;
   border-bottom: none;
 }
@@ -816,8 +819,9 @@ getList()
 }
 
 .steps a {
-  color: #409EFF;
+  color: #00897b;
   text-decoration: none;
+  font-weight: 500;
 }
 
 .prompt-content {
@@ -834,15 +838,15 @@ getList()
 
 .ai-link {
   margin-top: 8px;
-  color: #409EFF;
+  color: #00897b;
 }
 
 .ai-link a {
-  color: #409EFF;
+  color: #00897b;
   font-weight: 500;
 }
 
 :deep(.el-button) {
-  border-radius: 6px;
+  border-radius: 10px;
 }
 </style>
