@@ -80,7 +80,7 @@
           <textarea
             v-model="localAnswer"
             class="answer-textarea"
-            placeholder="请输入你的答案..."
+            placeholder="不同的空用;隔开"
             @blur="onAnswerChange"
           ></textarea>
         </div>
